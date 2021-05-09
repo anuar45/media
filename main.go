@@ -15,6 +15,8 @@ import (
 var mediaDir = "/home/anuar/media"
 var mediaPrefix = "/media/"
 var thumbsPrefix = "/thumbs/"
+var assetsPrefix = "/assets/"
+var assetsDir = "./assets"
 
 // http://mediaserver/api/v/1/items?path=/
 // http://mediaserver/media/
@@ -29,6 +31,7 @@ func main() {
 	router.HandleFunc("/", HomeHandler)
 	router.HandleFunc(thumbsPrefix+"{path:.*}", ThumbsHandler)
 	router.PathPrefix(mediaPrefix).Handler(http.StripPrefix(mediaPrefix, http.FileServer(http.Dir(mediaDir))))
+	router.PathPrefix(assetsPrefix).Handler(http.StripPrefix(assetsPrefix, http.FileServer(http.Dir(assetsDir))))
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -85,11 +88,21 @@ func filesToItems(path string) []MediaItem {
 
 		fileType := getFileType(file)
 
+		var mediaPath, thumbPath string
+		switch fileType {
+		case "dir":
+			mediaPath = "./assets/dir.png"
+			thumbPath = "./assets/dir.png"
+		default:
+			mediaPath = mediaPrefix + path + file.Name()
+			thumbPath = thumbsPrefix + path + file.Name()
+		}
+
 		mediaItem := MediaItem{
 			file.Name(),
-			mediaPrefix + path + file.Name(),
+			mediaPath,
 			fileType,
-			thumbsPrefix + path + file.Name(),
+			thumbPath,
 		}
 
 		mediaItems = append(mediaItems, mediaItem)
@@ -100,7 +113,7 @@ func filesToItems(path string) []MediaItem {
 
 func getFileType(fileInfo os.FileInfo) string {
 	if fileInfo.IsDir() {
-		return "directory"
+		return "dir"
 	}
 
 	return "media"
