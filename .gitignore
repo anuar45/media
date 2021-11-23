@@ -1,0 +1,6 @@
+bin/
+misc/
+svelte/node_modules/
+svelte/public/build/
+
+.DS_Store
