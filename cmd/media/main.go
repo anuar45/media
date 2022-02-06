@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
@@ -18,7 +19,7 @@ const (
 	mediaPrefix  = "/media/"
 	thumbsPrefix = "/thumbs/"
 	webPrefix    = "/public/"
-	webDir       = "./svelte/public/"
+	webDir       = "./front/public/"
 )
 
 // http://mediaserver/api/v1/items?path=/
@@ -71,7 +72,8 @@ func (s *Server) Run() error {
 	router.HandleFunc("/", s.HomeHandler)
 	router.HandleFunc("/api/v1/items", s.ItemsHandler)
 	router.HandleFunc(thumbsPrefix+"{path:.*}", s.ThumbsHandler)
-	router.PathPrefix(mediaPrefix).Handler(http.StripPrefix(mediaPrefix, http.FileServer(http.Dir(s.config.mediaDir))))
+	router.PathPrefix(mediaPrefix).Handler(http.FileServer(http.Dir(s.config.mediaDir)))
+	// router.PathPrefix(mediaPrefix).Handler(http.StripPrefix(mediaPrefix, http.FileServer(http.Dir(s.config.mediaDir))))
 	router.PathPrefix(webPrefix).Handler(http.StripPrefix(webPrefix, http.FileServer(http.Dir(webDir))))
 
 	return http.ListenAndServe(s.config.listenAddr, router)
@@ -85,9 +87,10 @@ type MediaItem struct {
 }
 
 func (s *Server) ItemsHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 
-	mediaItems := s.filesToItems(vars["path"])
+	path := r.URL.Query().Get("path")
+
+	mediaItems := s.filesToItems(path)
 
 	json.NewEncoder(w).Encode(mediaItems)
 }
@@ -113,16 +116,17 @@ func (s *Server) ThumbsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) HomeHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "svelte/public/index.html")
+	http.ServeFile(w, r, "front/public/index.html")
 }
 
 func (s *Server) filesToItems(path string) []MediaItem {
 	var mediaItems []MediaItem
 
 	targetDir := s.config.mediaDir + path
+	log.Println(targetDir)
 	files, err := ioutil.ReadDir(targetDir)
 	if err != nil {
-		log.Printf("error reading folder %s: %v\n", targetDir, err)
+		log.Printf("error reading directory %s: %v\n", targetDir, err)
 	}
 
 	for _, file := range files {
@@ -131,9 +135,9 @@ func (s *Server) filesToItems(path string) []MediaItem {
 
 		var mediaPath, thumbPath string
 		switch fileType {
-		case "folder":
-			mediaPath = "./svelte/public/folder.png"
-			thumbPath = "./svelte/public/folder.png"
+		case "directory":
+			mediaPath = "/" + path + file.Name()
+			thumbPath = "/" + path + file.Name()
 		default:
 			mediaPath = mediaPrefix + path + file.Name()
 			thumbPath = thumbsPrefix + path + file.Name()
@@ -152,10 +156,20 @@ func (s *Server) filesToItems(path string) []MediaItem {
 	return mediaItems
 }
 
+var fileCategory = map[string]string{
+	".mp4": "video",
+	".jpg": "image",
+}
+
 func getFileType(fileInfo os.FileInfo) string {
 	if fileInfo.IsDir() {
-		return "folder"
+		return "directory"
 	}
 
-	return "media"
+	fileType, ok := fileCategory[filepath.Ext(fileInfo.Name())]
+	if !ok {
+		return "other"
+	}
+
+	return fileType
 }

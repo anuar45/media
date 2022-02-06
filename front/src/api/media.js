@@ -6,6 +6,8 @@ import Api from "../services/Api";
 export const getMediaItems = async (path) => {
     try {
       const response = await Api.get("/items?path=" + path);
+      console.log("/items?path=" + path)      
+      console.log(response)
       return response;
     } catch (error) {
       console.log(error)

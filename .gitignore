@@ -1,6 +1,8 @@
 bin/
 misc/
-svelte/node_modules/
-svelte/public/build/
-
+front/node_modules/
+front/svelte/public/build/
+front/public/build/
+node_modules/
+log.txt
 .DS_Store
