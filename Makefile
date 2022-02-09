@@ -6,4 +6,4 @@ web:
 	npm --prefix=front run build
 
 run: web
-	go run cmd/media/main.go --mediaDir /home/anuar/media/
+	go run cmd/media/main.go --mediaDir data/pics 

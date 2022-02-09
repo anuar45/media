@@ -27,9 +27,17 @@ const (
 
 // http://mediaserver/api/v1/items?path=/video
 // http://mediaserver/media/video
+type sliceFlags []string
+
 type Config struct {
-	mediaDir   string
+	mediaDirs  sliceFlags
 	listenAddr string
+}
+
+func (s *sliceFlags) String() {}
+
+func (s *sliceFlags) Set(value string) error {
+	*s = append(*s, value)
 }
 
 func (c *Config) Parse() error {
@@ -72,8 +80,8 @@ func (s *Server) Run() error {
 	router.HandleFunc("/", s.HomeHandler)
 	router.HandleFunc("/api/v1/items", s.ItemsHandler)
 	router.HandleFunc(thumbsPrefix+"{path:.*}", s.ThumbsHandler)
-	router.PathPrefix(mediaPrefix).Handler(http.FileServer(http.Dir(s.config.mediaDir)))
-	// router.PathPrefix(mediaPrefix).Handler(http.StripPrefix(mediaPrefix, http.FileServer(http.Dir(s.config.mediaDir))))
+	// router.PathPrefix(mediaPrefix).Handler(http.FileServer(http.Dir(s.config.mediaDir)))
+	router.PathPrefix(mediaPrefix).Handler(http.StripPrefix(mediaPrefix, http.FileServer(http.Dir(s.config.mediaDir))))
 	router.PathPrefix(webPrefix).Handler(http.StripPrefix(webPrefix, http.FileServer(http.Dir(webDir))))
 
 	return http.ListenAndServe(s.config.listenAddr, router)

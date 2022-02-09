@@ -1,5 +1,6 @@
 bin/
 misc/
+data/
 front/node_modules/
 front/svelte/public/build/
 front/public/build/
