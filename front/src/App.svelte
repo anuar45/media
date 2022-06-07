@@ -4,21 +4,29 @@
   import Image from './Image.svelte'
   import Directory from './Directory.svelte'
   import Video from './Video.svelte'
+  import Unknown from './Unknown.svelte'
 
   let mediaItems = [];
   let currentPath = "/";
-  $ : parentPath = currentPath === "/" ? currentPath : currentPath.replace(/\/.*$/, '');
+  let currentBase = "";
+  let parentPath = "";
+  $ : parentPath = currentPath === "" ? currentPath : currentPath.replace(/\/\w*$/, '');
+  $ : currentBase = currentPath === "" ? "" : currentBase;
 
 	onMount(async () => {
-    const res = await getMediaItems(currentPath);
+    const res = await getMediaItems(currentBase, currentPath);
     mediaItems = res;
     console.log(mediaItems);
   });
 
-	export const changeDir = async (dirPath) => {
-	  const res = await getMediaItems(dirPath);
+	export const changeDir = async (base, dirPath) => {
+    currentBase = base
+    currentPath = dirPath
+	  const res = await getMediaItems(base, dirPath);
     mediaItems = res;
-    console.log(dirPath);
+    console.log("parentPath", parentPath)
+    console.log("currentPath", currentPath)
+    console.log("dirPath", dirPath);
     console.log(mediaItems);
 	};
 
@@ -27,10 +35,12 @@
 
 <main>
 	<div id="gallery" class="container">
-    <Directory dirName=".." dirPath={parentPath} changeDir={changeDir}/>
-		{#each mediaItems as item}
+    {#if currentBase !== ""}
+    <Directory dirName=".." dirBase={currentBase} dirPath={parentPath} changeDir={changeDir}/>
+		{/if}
+    {#each mediaItems as item}
       {#if item.type == "directory"}
-        <Directory dirName={item.name} dirPath={item.path} changeDir={changeDir}/>
+        <Directory dirName={item.name} dirBase={item.base} dirPath={item.path} changeDir={changeDir}/>
       {/if}
 		{/each}
 		{#each mediaItems as item}
@@ -43,6 +53,11 @@
         <Video videoName={item.name} videoUrl={item.path}/>
       {/if}
 		{/each}
+    {#each mediaItems as item}
+      {#if item.type == "unknown"}
+        <Unknown itemName={item.name}/>
+      {/if}
+    {/each}
 	</div>
 </main>
 

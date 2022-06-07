@@ -14,7 +14,7 @@ func main() {
 	}
 
 	svc := media.NewService(config)
-	apiServer := api.NewServer{svc, config}
+	apiServer := api.NewServer(svc, config)
 
 	log.Println("Starting media server on port", config.ListenAddr)
 	log.Fatalln(apiServer.Run())

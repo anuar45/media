@@ -1,6 +1,7 @@
 <script>
 	export let dirName;
 	export let dirPath;
+  export let dirBase;
 	export let changeDir;
 </script>
 
@@ -32,7 +33,7 @@ p {
 </style>
 
 <div class="directory">
-  <img class="cursor" src="./public/directory.png" alt={dirName} on:click={changeDir(dirPath)}>
+  <img class="cursor" src="./public/directory.png" alt={dirName} on:click={changeDir(dirBase, dirPath)}>
   <div class="caption">
     <p>{dirName}</p>
   </div>

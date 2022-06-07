@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"path/filepath"
+	"strconv"
 )
 
 type mediaDirs map[string]string
@@ -11,8 +12,8 @@ type mediaDirs map[string]string
 const (
 	mediaPrefix  = "/media/"
 	thumbsPrefix = "/thumbs/"
-	webPrefix    = "/public/"
-	webDir       = "./front/public/"
+	webUiPrefix  = "/public/"
+	webUiDir     = "./front/public/"
 )
 
 type Config struct {
@@ -25,9 +26,10 @@ type Config struct {
 }
 
 func ConfigFromFlags() (*Config, error) {
-	config := Config{
-		WebPrefix:    webPrefix,
-		WebDir:       webDir,
+	config := &Config{
+		MediaDirs:    make(map[string]string),
+		WebPrefix:    webUiPrefix,
+		WebDir:       webUiDir,
 		MediaPrefix:  mediaPrefix,
 		ThumbsPrefix: thumbsPrefix,
 	}
@@ -42,15 +44,11 @@ func (m mediaDirs) String() string {
 }
 
 func (m mediaDirs) Set(value string) error {
-	if m == nil {
-		m = make(map[string]string)
-	}
-
 	mediaDirBase := filepath.Base(value)
 
 	if _, ok := m[mediaDirBase]; ok {
 		for i, ok := 1, true; ok; i++ {
-			mediaDirBaseNew := mediaDirBase + string(i)
+			mediaDirBaseNew := mediaDirBase + strconv.Itoa(i)
 			if _, ok = m[mediaDirBaseNew]; !ok {
 				m[mediaDirBase] = value
 				break

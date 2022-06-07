@@ -3,11 +3,11 @@
 import Api from "../services/Api";
 
 // Method to get a list of all items in a path
-export const getMediaItems = async (path) => {
+export const getMediaItems = async (base, path) => {
     try {
-      const response = await Api.get("/items?path=" + path);
-      console.log("/items?path=" + path)      
-      console.log(response)
+      const response = await Api.get("/items?base=" + base + "&path=" + path);
+      console.log("/items?base=" + base + "&path=" + path)      
+      // console.log(response)
       return response;
     } catch (error) {
       console.log(error)

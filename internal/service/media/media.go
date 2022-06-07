@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Service struct {
@@ -15,13 +16,21 @@ func NewService(config *Config) *Service {
 	return &Service{config}
 }
 
-func (s *Service) FilesToItems(path string) []MediaItem {
+func (s *Service) FilesToItems(base, path string) []MediaItem {
 	var mediaItems []MediaItem
 
-	if path == "/" {
-		for virtualDir, fsDir := range s.config.MediaDirs {
-			basePath := filepath.Base(fsDir)
-			mediaItems = append(mediaItems, MediaItem{Name: basePath, Path: virtualDir, Type: "directory"})
+	if base == "" {
+		for virtualDir := range s.config.MediaDirs {
+
+			mediaItems = append(
+				mediaItems,
+				MediaItem{
+					Name: virtualDir,
+					Path: "/",
+					Type: "directory",
+					Base: virtualDir,
+				},
+			)
 		}
 
 		return mediaItems
@@ -30,29 +39,37 @@ func (s *Service) FilesToItems(path string) []MediaItem {
 	// /media/pics/file.jpg
 	// /media/pics2/video/file.mkv
 
-	targetDir := path
-	log.Println(targetDir)
-	files, err := ioutil.ReadDir(targetDir)
+	log.Println(base, path)
+	items, err := ioutil.ReadDir(s.config.MediaDirs[base] + path)
 	if err != nil {
-		log.Printf("error reading directory %s: %v\n", targetDir, err)
+		log.Printf("error reading directory %s: %v\n", base, err)
 	}
 
-	for _, file := range files {
+	for _, item := range items {
 
-		fileType := getFileType(file)
+		itemType := getItemType(item)
 
 		var mediaPath string
-		switch fileType {
+		switch itemType {
 		case "directory":
-			mediaPath = "/" + path + file.Name()
+			if path == "/" {
+				mediaPath = "/" + item.Name()
+			} else {
+				mediaPath = strings.Join([]string{path, item.Name()}, "/")
+			}
 		default:
-			mediaPath = mediaPrefix + path + file.Name()
+			if path == "/" {
+				mediaPath = mediaPrefix + base + "/" + item.Name()
+			} else {
+				mediaPath = mediaPrefix + base + path + "/" + item.Name()
+			}
 		}
 
 		mediaItem := MediaItem{
-			file.Name(),
+			item.Name(),
 			mediaPath,
-			fileType,
+			itemType,
+			base,
 		}
 
 		mediaItems = append(mediaItems, mediaItem)
@@ -64,16 +81,17 @@ func (s *Service) FilesToItems(path string) []MediaItem {
 var fileCategory = map[string]string{
 	".mp4": "video",
 	".jpg": "image",
+	".png": "image",
 }
 
-func getFileType(fileInfo os.FileInfo) string {
+func getItemType(fileInfo os.FileInfo) string {
 	if fileInfo.IsDir() {
 		return "directory"
 	}
 
 	fileType, ok := fileCategory[filepath.Ext(fileInfo.Name())]
 	if !ok {
-		return "other"
+		return "unknown"
 	}
 
 	return fileType
